@@ -60,7 +60,7 @@ Export focus history to Excel by project and date range.
 
 Manage projects with either:
 
-* Kanban Board (To Do → In Progress → Done)
+* Kanban Board (To Do → In Progress → In Review → Done)
 * Sortable List View
 
 Track due dates, priorities, and total focus time for every project.

@@ -1028,10 +1028,12 @@ body{background:var(--bg);color:var(--text);font-family:'Lato',sans-serif;font-w
             <button type="button" data-lang="en" oncontextmenu="event.preventDefault();toggleTranslateLang(this)" onclick="inlineTranslate('idea-desc',this)" title="Translate to English" style="position:absolute;right:8px;bottom:8px;font-size:11px;padding:3px 8px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);cursor:pointer;font-family:'Lato',sans-serif;transition:all .15s" onmouseover="this.style.borderColor='var(--sage)';this.style.color='var(--sage2)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--muted)'">🌐 EN</button>
           </div>
         </div>
-        <div class="modal-actions">
-          <button class="btn" id="ideas-delete-btn" onclick="ideasDelete()" style="color:var(--rose);display:none">Delete</button>
-          <button class="btn" onclick="ideasCloseModal()">Cancel</button>
-          <button class="btn btn-primary" onclick="ideasSave()">Save</button>
+        <div class="modal-actions" style="justify-content:space-between">
+          <button class="btn" id="ideas-delete-btn" onclick="ideasDelete()" style="color:var(--rose);border-color:rgba(192,57,43,.4);display:none" onmouseover="this.style.background='var(--rose)';this.style.color='#fff';this.style.borderColor='var(--rose)'" onmouseout="this.style.background='';this.style.color='var(--rose)';this.style.borderColor='rgba(192,57,43,.4)'">Delete</button>
+          <div style="display:flex;gap:8px">
+            <button class="btn" onclick="ideasCloseModal()">Cancel</button>
+            <button class="btn btn-primary" onclick="ideasSave()">Save</button>
+          </div>
         </div>
       </div>
     </div>
@@ -1123,18 +1125,16 @@ body{background:var(--bg);color:var(--text);font-family:'Lato',sans-serif;font-w
             </div>
           </div>
           <!-- Session log -->
-          <div class="pomo-card" id="pomo-log-card" style="display:flex;flex-direction:column;overflow:hidden">
+          <div class="pomo-card" id="pomo-log-card" style="display:flex;flex-direction:column;min-height:0">
             <div style="font-size:11px;font-weight:700;letter-spacing:.1em;color:var(--muted);text-transform:uppercase;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
-              <span>Session Log</span>
-              <button class="btn" onclick="openManualEntry()" style="font-size:10px;padding:3px 9px;letter-spacing:.02em">+ Add Entry</button>
+              <span>Session Log <span id="pomo-log-count" style="font-weight:400;color:var(--muted2)"></span></span>
+              <div style="display:flex;align-items:center;gap:10px">
+                <button class="btn" onclick="openManualEntry()" style="font-size:10px;padding:3px 9px;letter-spacing:.02em">+ Add Entry</button>
+              </div>
             </div>
             <div class="pomo-log" id="pomo-log" style="flex:1;overflow-y:auto;min-height:0"></div>
-            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;margin-top:12px;flex-shrink:0">
-              <div style="display:flex;gap:8px">
-                <button class="btn" onclick="pomoClearLog()" style="font-size:11px;padding:5px 10px;color:var(--rose);border-color:var(--rose)">✕ Clear All</button>
-                <button class="btn" onclick="openPomoExportModal()" style="font-size:11px;padding:5px 10px">⬇ Export Excel</button>
-              </div>
-              <span id="pomo-log-hint" style="font-size:10px;color:var(--muted2)">Focus log supports up to 100 sessions</span>
+            <div style="display:flex;justify-content:flex-end;margin-top:12px;flex-shrink:0">
+              <button class="btn" onclick="openPomoExportModal()" style="font-size:11px;padding:5px 10px">⬇ Export Excel</button>
             </div>
           </div>
         </div>
@@ -1302,9 +1302,12 @@ body{background:var(--bg);color:var(--text);font-family:'Lato',sans-serif;font-w
         <input class="form-input" type="date" id="pomo-exp-to">
       </div>
     </div>
-    <div class="modal-actions">
-      <button class="btn" onclick="closePomoExportModal()">Cancel</button>
-      <button class="btn btn-primary" onclick="pomoExportConfirm()">⬇ Export</button>
+    <div class="modal-actions" style="justify-content:space-between">
+      <button class="btn" onclick="pomoConfirmClear()" style="font-size:11px;color:var(--rose);border-color:rgba(192,57,43,.4)" onmouseover="this.style.background='var(--rose)';this.style.color='#fff';this.style.borderColor='var(--rose)'" onmouseout="this.style.background='';this.style.color='var(--rose)';this.style.borderColor='rgba(192,57,43,.4)'">Clear log</button>
+      <div style="display:flex;gap:8px">
+        <button class="btn" onclick="closePomoExportModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="pomoExportConfirm()">⬇ Export</button>
+      </div>
     </div>
   </div>
 </div>
@@ -1848,7 +1851,7 @@ function saveTask() {
 function customConfirm(msg, title='Are you sure?', confirmLabel='Delete', cancelLabel='Cancel', confirmStyle='') {
   return new Promise(resolve => {
     document.getElementById('confirm-title').textContent = title;
-    document.getElementById('confirm-msg').textContent = msg;
+    document.getElementById('confirm-msg').innerHTML = msg;
     const okBtn = document.querySelector('#confirm-modal .btn:last-child');
     const cancelBtn = document.querySelector('#confirm-modal .btn:first-child');
     if (okBtn) { okBtn.textContent = confirmLabel; okBtn.style.cssText = confirmStyle || 'border-color:rgba(138,90,90,.35);color:var(--rose);background:rgba(138,90,90,.07)'; }
@@ -2353,16 +2356,6 @@ function pomoOnSessionEnd() {
       ts: (pomoSessionStartTime || new Date()).toISOString()
     };
     pomoLog.unshift(entry);
-    if (pomoLog.length > 100) pomoLog = pomoLog.slice(0, 100);
-    // Warn user when nearing or at limit
-    const hint = document.getElementById('pomo-log-hint');
-    if (pomoLog.length >= 100) {
-      showToast('⚠️ Focus log is full — older sessions will be lost. Export your data now!', 5000);
-      if (hint) { hint.textContent = '⚠ Log is full — export now to preserve history'; hint.style.color = 'var(--danger)'; }
-    } else if (pomoLog.length >= 90) {
-      showToast('⚠️ Focus log nearing limit — export to preserve history', 4000);
-      if (hint) { hint.textContent = '⚠ Nearing 100 session limit — consider exporting'; hint.style.color = 'var(--amber)'; }
-    }
     localStorage.setItem(POMO_LOG_KEY, JSON.stringify(pomoLog));
     pomoSession++;
     pomoUpdateDots(); pomoRenderStats(); pomoRenderLog();
@@ -2413,15 +2406,6 @@ function pomoDoneEarly() {
     manual: false
   };
   pomoLog.unshift(entry);
-  if (pomoLog.length > 100) pomoLog = pomoLog.slice(0, 100);
-  const hint2 = document.getElementById('pomo-log-hint');
-  if (pomoLog.length >= 100) {
-    showToast('⚠️ Focus log is full — older sessions will be lost. Export your data now!', 5000);
-    if (hint2) { hint2.textContent = '⚠ Log is full — export now to preserve history'; hint2.style.color = 'var(--danger)'; }
-  } else if (pomoLog.length >= 90) {
-    showToast('⚠️ Focus log nearing limit — export to preserve history', 4000);
-    if (hint2) { hint2.textContent = '⚠ Nearing 100 session limit — consider exporting'; hint2.style.color = 'var(--amber)'; }
-  }
   localStorage.setItem(POMO_LOG_KEY, JSON.stringify(pomoLog));
   pomoSession++;
   pomoUpdateDots(); pomoRenderStats(); pomoRenderLog(); updatePomoNavBadge();
@@ -2646,11 +2630,13 @@ function pomoRenderStats() {
 function pomoRenderLog() {
   const el = document.getElementById('pomo-log');
   if (!el) return;
+  const countEl = document.getElementById('pomo-log-count');
+  if (countEl) { countEl.textContent = pomoLog.length ? '· ' + pomoLog.length : ''; countEl.style.display = ''; }
   if (pomoLog.length === 0) {
     el.innerHTML = '<div class="empty"><div class="empty-icon">⏱</div><div class="empty-text">No sessions yet</div></div>';
     return;
   }
-  el.innerHTML = pomoLog.slice(0, 50).map(e => {
+  el.innerHTML = pomoLog.map(e => {
     const d = new Date(e.ts);
     const time = d.toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit'});
     const date = d.toLocaleDateString('en-US', {month:'short', day:'numeric'});
@@ -2805,6 +2791,16 @@ function pomoPopulateTaskSelect() {
     ).join('');
 }
 
+async function pomoConfirmClear() {
+  const confirmed = await customConfirm('This will permanently delete all sessions. <span style="color:var(--rose)">Weekly Report data will also be lost.</span> Export first, or press Ctrl+S to save a backup.', '⚠ Clear Session Log?', 'Clear log', 'Cancel', 'border-color:var(--rose);color:var(--rose);background:rgba(192,57,43,.07)');
+  if (!confirmed) return;
+  closePomoExportModal();
+  pomoLog = [];
+  localStorage.setItem(POMO_LOG_KEY, JSON.stringify(pomoLog));
+  pomoRenderStats(); pomoRenderLog(); updatePomoNavBadge();
+  showToast('✅ Session log cleared');
+}
+
 async function pomoClearLog() {
   const confirmed = await customConfirm('This will permanently delete all focus sessions. Export first if you want to keep the data.', 'Clear all sessions?', 'Clear All', 'Cancel', 'border-color:var(--rose);color:var(--rose);background:rgba(192,57,43,.07)');
   if (!confirmed) return;
@@ -2813,8 +2809,6 @@ async function pomoClearLog() {
   pomoRenderStats();
   pomoRenderLog();
   updatePomoNavBadge();
-  const hint = document.getElementById('pomo-log-hint');
-  if (hint) { hint.textContent = 'Focus log supports up to 100 sessions'; hint.style.color = 'var(--muted2)'; }
   showToast('✅ Session log cleared');
 }
 
@@ -2929,11 +2923,12 @@ const sheet2Data = [['Project', 'Total (min)', 'Hours', 'Distribution']];
   const maxMins = sheet2Rows.length > 0 ? sheet2Rows[0][1] : 1;
   const BAR = 20;
   sheet2Data.forEach((row, i) => {
-    if (i === 0 || i === sheet2Data.length - 1) return;
+    if (i === 0) return;
     const mins = row[1];
     row[3] = '█'.repeat(Math.round((mins / maxMins) * BAR));
   });
 
+  sheet2Data.push(['', '', '', '']);
   sheet2Data.push(['TOTAL', totalMins, Math.round(totalMins / 60 * 10) / 10, rangeFrom + ' → ' + rangeTo]);
 
   // ── Build workbook with styling
@@ -2961,7 +2956,7 @@ const sheet2Data = [['Project', 'Total (min)', 'Hours', 'Distribution']];
   // Green color for bar cells (data starts row 3 now)
   const barStyle = {font:{color:{rgb:'82B89A'}}};
   for (let i = 2; i <= sheet2Rows.length + 1; i++) {
-    if (ws2['D' + i]) ws2['D' + i].s = barStyle;
+    if (ws2['D' + i] && ws2['D' + i].v) ws2['D' + i].s = barStyle;
   }
   // Bold total row
   const totalRowIdx = sheet2Data.length;
@@ -2993,8 +2988,6 @@ async function pomoClearLog() {
   pomoRenderStats();
   pomoRenderLog();
   updatePomoNavBadge();
-  const hint = document.getElementById('pomo-log-hint');
-  if (hint) { hint.textContent = 'Focus log supports up to 100 sessions'; hint.style.color = 'var(--muted2)'; }
   showToast('✅ Session log cleared');
 }
 
@@ -3082,8 +3075,6 @@ async function pomoClearLog() {
   pomoRenderStats();
   pomoRenderLog();
   updatePomoNavBadge();
-  const hint = document.getElementById('pomo-log-hint');
-  if (hint) { hint.textContent = 'Focus log supports up to 100 sessions'; hint.style.color = 'var(--muted2)'; }
   showToast('✅ Session log cleared');
 }
 
@@ -3296,7 +3287,7 @@ function saveManualEntry() {
     ts: new Date(tsStr).toISOString()
   };
   pomoLog.unshift(entry);
-  if (pomoLog.length > 200) pomoLog = pomoLog.slice(0, 200);
+
   localStorage.setItem(POMO_LOG_KEY, JSON.stringify(pomoLog));
   pomoRenderLog(); pomoRenderStats(); updatePomoNavBadge();
   closeManualEntry();
@@ -3934,7 +3925,7 @@ ${dayLines}`;
       ? activeBlockers.map(b => `- ${b.text}${b.taskName ? ` (${b.taskName})` : ''}${b.owner ? ` — ${b.owner}` : ''}`).join('\n')
       : '- None';
 
-    await aiCall(`Based on the following work data for ${rangeLabel}, generate a concise professional weekly standup. Use the Pomodoro session notes and day-by-day log to describe what was actually worked on — be specific, not generic. If session notes mention specific activities (e.g. "client call", "architecture review"), include them.\n\nFormat:\n\n**Weekly Standup – ${rangeLabel}**\n\n**This Week:**\n- **Project Name** (Xh): specific activities\n\n**Blockers:**\n- **Project Name**: blocker description\n\nRules:\n- This Week: use ONLY the exact task names from the Pomodoro log - do NOT invent new category names; sessions with no task name go under Others; include hours, be specific about activities\n- Blockers: format each as "**Project Name**: blocker description" — extract project name from the blocker context provided, copy description verbatim\n- If no blockers, write "- None"\n\nTask data:\n${taskCtx}\n\nFocus log:\n${logCtx}\n\nCurrent blockers (use exactly, reformat to **Project Name**: description):\n${blockerCtx}`);
+    await aiCall(`Based on the following work data for ${rangeLabel}, generate a concise professional weekly standup. Use the Pomodoro session notes and day-by-day log to describe what was actually worked on — be specific, not generic. If session notes mention specific activities (e.g. "client call", "architecture review"), include them.\n\nFormat:\n\n**Weekly Standup – ${rangeLabel}**\n\n**This Week:**\n- **Project Name** (Xh): specific activities\n\n**Blockers:**\n- **Project Name**: blocker description\n\nRules:\n- This Week: use ONLY the exact task names from the Pomodoro log - do NOT invent new category names; sessions with no task name go under Others; include hours, be specific about activities\n- Blockers: format each as "**Project Name**: description — Owner Name"; the raw data already contains "— Owner Name" at the end of each line, copy it exactly as-is; do NOT omit the owner\n- If no blockers, write "- None"\n\nTask data:\n${taskCtx}\n\nFocus log:\n${logCtx}\n\nCurrent blockers (use exactly, reformat to **Project Name**: description):\n${blockerCtx}`);
   }
 }
 // ── end AI Date Range Modal ───────────────────────────────────
@@ -5567,12 +5558,7 @@ function mtgToggleFullscreen() {
     : '<path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/>';
 }
 
-(function() {
-  const hint = document.getElementById('pomo-log-hint');
-  if (!hint) return;
-  if (pomoLog.length >= 100) { hint.textContent = '⚠ Log is full — export now to preserve history'; hint.style.color = 'var(--danger)'; }
-  else if (pomoLog.length >= 90) { hint.textContent = '⚠ Nearing 100 session limit — consider exporting'; hint.style.color = 'var(--amber)'; }
-})();
+
 
 // ── Theme switcher ──────────────────────────────────────────────────────
 const THEMES = [

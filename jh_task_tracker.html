@@ -1857,6 +1857,7 @@ const _tBtn = (id, pos='right:8px;top:50%;transform:translateY(-50%)') =>
   `<button type="button" data-lang="en" oncontextmenu="event.preventDefault();toggleTranslateLang(this)" onclick="inlineTranslate('${id}',this)" title="Translate to English" style="position:absolute;${pos};font-size:11px;padding:3px 8px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);cursor:pointer;white-space:nowrap;transition:all .15s;font-family:'Lato',sans-serif;z-index:1" onmouseover="this.style.borderColor='var(--sage)';this.style.color='var(--sage2)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--muted)'">🌐 EN</button>`;
 
 function openProjDetail(id) {
+  if (_pdpTaskId !== id) _pdpBlockerOwner = null;
   _pdpTaskId = id;
   _pdpTab = 'overview';
   const overlay = document.getElementById('proj-detail-overlay');
@@ -1867,6 +1868,7 @@ function openProjDetail(id) {
 function closeProjDetail() {
   document.getElementById('proj-detail-overlay').classList.remove('open');
   _pdpTaskId = null;
+  _pdpBlockerOwner = null;
 }
 
 function pdpSetTab(tab) {

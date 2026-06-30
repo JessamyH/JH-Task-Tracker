@@ -299,7 +299,9 @@ body{background:var(--bg);color:var(--text);font-family:'Lato',sans-serif;font-w
 .daily-side-tab{flex:1;padding:9px 0;font-size:12px;font-weight:700;text-align:center;cursor:pointer;border:none;background:none;font-family:'Lato',sans-serif;color:var(--muted);border-bottom:2px solid transparent;transition:all .15s}
 .daily-side-tab.active-blocker{color:var(--blocker-dark);border-bottom-color:var(--blocker);background:rgba(196,90,48,.06)}
 .daily-side-tab.active-backlog{color:var(--muted);border-bottom-color:var(--border2);background:var(--surface2)}
-.daily-side-tab:hover:not(.active-blocker):not(.active-backlog){color:var(--text2);background:var(--surface2)}
+.daily-side-tab.active-routine{color:var(--sage2);border-bottom-color:var(--sage);background:rgba(122,158,122,.08)}
+.daily-side-tab:hover:not(.active-blocker):not(.active-backlog):not(.active-routine){color:var(--text2);background:var(--surface2)}
+.tab-badge-routine{background:rgba(122,158,122,.15);color:var(--sage2)}
 .daily-side-tab-badge{display:inline-block;margin-left:5px;font-size:9px;padding:1px 6px;border-radius:999px;font-weight:700;vertical-align:middle}
 .tab-badge-blocker{background:rgba(196,90,48,.15);color:var(--blocker-dark)}
 .tab-badge-backlog{background:var(--surface3);color:var(--muted)}
@@ -723,7 +725,6 @@ body{background:var(--bg);color:var(--text);font-family:'Lato',sans-serif;font-w
           <div class="daily-date-label" id="daily-date-label"></div>
           <div id="daily-progress-pill" style="display:flex;align-items:center;gap:7px;font-size:11px;color:var(--muted);font-family:'DM Mono',monospace"></div>
         </div>
-
       </div>
       <div class="daily-layout">
         <div class="daily-main" id="daily-main" ondragover="event.preventDefault();if(typeof _blockerDragId!=='undefined'&&_blockerDragId)event.dataTransfer.dropEffect='none'" ondrop="if(typeof _blockerDragId==='undefined'||!_blockerDragId)dailyDropToToday(event);else event.preventDefault()"></div>
@@ -731,9 +732,11 @@ body{background:var(--bg);color:var(--text);font-family:'Lato',sans-serif;font-w
           <div class="daily-side-tabs">
             <button class="daily-side-tab active-backlog" id="dstab-backlog" onclick="dailySideTab('backlog')">Backlog<span class="daily-side-tab-badge tab-badge-backlog" id="backlog-tab-badge">0</span></button>
             <button class="daily-side-tab" id="dstab-blockers" onclick="dailySideTab('blockers')">⛔ Blockers<span class="daily-side-tab-badge tab-badge-blocker" id="blocker-tab-badge">0</span></button>
+            <button class="daily-side-tab" id="dstab-routines" onclick="dailySideTab('routines')">🔁 Routines<span class="daily-side-tab-badge tab-badge-routine" id="routine-tab-badge">0</span></button>
           </div>
           <div class="daily-tab-panel" id="daily-panel-backlog" style="padding:0" ondragover="event.preventDefault()" ondrop="dailyDropToBacklog(event)"></div>
           <div class="daily-tab-panel hidden" id="daily-panel-blockers" style="padding:14px 16px;flex-direction:column;flex:1;min-height:0;overflow:hidden" ondragover="event.preventDefault();event.dataTransfer.dropEffect='none'" ondrop="event.preventDefault()"></div>
+          <div class="daily-tab-panel hidden" id="daily-panel-routines" style="padding:14px 16px;flex-direction:column;flex:1;min-height:0;overflow:hidden"></div>
         </div>
       </div>
     </div>
@@ -1084,11 +1087,46 @@ body{background:var(--bg);color:var(--text);font-family:'Lato',sans-serif;font-w
             <button type="button" data-lang="en" oncontextmenu="event.preventDefault();toggleTranslateLang(this)" onclick="inlineTranslate('idea-desc',this)" title="Translate to English" style="position:absolute;right:8px;bottom:8px;font-size:11px;padding:3px 8px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);cursor:pointer;font-family:'Lato',sans-serif;transition:all .15s" onmouseover="this.style.borderColor='var(--sage)';this.style.color='var(--sage2)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--muted)'">🌐 EN</button>
           </div>
         </div>
-        <div class="modal-actions" style="justify-content:space-between">
+        <div class="modal-actions" style="justify-content:flex-end">
           <button class="btn" id="ideas-delete-btn" onclick="ideasDelete()" style="color:var(--rose);border-color:rgba(192,57,43,.4);display:none" onmouseover="this.style.background='var(--rose)';this.style.color='#fff';this.style.borderColor='var(--rose)'" onmouseout="this.style.background='';this.style.color='var(--rose)';this.style.borderColor='rgba(192,57,43,.4)'">Delete</button>
           <div style="display:flex;gap:8px">
             <button class="btn" onclick="ideasCloseModal()">Cancel</button>
             <button class="btn btn-primary" onclick="ideasSave()">Save</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Routines -->
+    <div class="modal-overlay" id="routine-edit-modal" style="z-index:210">
+      <div class="modal" style="max-width:420px">
+        <div class="modal-header">
+          <div class="modal-title" id="routine-edit-title">New routine</div>
+          <button class="modal-close" onclick="routineCloseEdit()">✕</button>
+        </div>
+        <input type="hidden" id="routine-edit-id">
+        <div class="form-group">
+          <label class="form-label">Task</label>
+          <div style="position:relative">
+            <input class="form-input" id="routine-text" placeholder="e.g. Write weekly report" style="padding-right:70px">
+            <button type="button" data-lang="en" oncontextmenu="event.preventDefault();toggleTranslateLang(this)" onclick="inlineTranslate('routine-text',this)" title="Translate to English" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);font-size:11px;padding:3px 8px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);cursor:pointer;font-family:'Lato',sans-serif;transition:all .15s" onmouseover="this.style.borderColor='var(--sage)';this.style.color='var(--sage2)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--muted)'">🌐 EN</button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Repeats on</label>
+          <div id="routine-day-chips" style="display:flex;gap:6px"></div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Link to project <span style="color:var(--muted2);font-weight:400">(optional)</span></label>
+          <select class="form-input" id="routine-task-select" style="width:100%;box-sizing:border-box">
+            <option value="">No project</option>
+          </select>
+        </div>
+        <div class="modal-actions" style="justify-content:flex-end">
+          <button class="btn" id="routine-delete-btn" onclick="routineDelete()" style="color:var(--rose);border-color:rgba(192,57,43,.4);display:none" onmouseover="this.style.background='var(--rose)';this.style.color='#fff';this.style.borderColor='var(--rose)'" onmouseout="this.style.background='';this.style.color='var(--rose)';this.style.borderColor='rgba(192,57,43,.4)'">Delete</button>
+          <div style="display:flex;gap:8px">
+            <button class="btn" onclick="routineCloseEdit()">Cancel</button>
+            <button class="btn btn-primary" onclick="routineSave()">Save</button>
           </div>
         </div>
       </div>
@@ -1224,7 +1262,7 @@ body{background:var(--bg);color:var(--text);font-family:'Lato',sans-serif;font-w
       </div>
     </div>
     <div class="form-group"><label class="form-label">Notes</label><div style="position:relative"><textarea class="form-textarea" id="f-notes" placeholder="Any details..." style="padding-right:70px;padding-bottom:32px"></textarea><button type="button" title="Translate to English" data-lang="en" oncontextmenu="event.preventDefault();toggleTranslateLang(this)" onclick="inlineTranslate('f-notes', this)" style="position:absolute;right:8px;bottom:8px;font-size:11px;padding:3px 8px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);cursor:pointer;white-space:nowrap;transition:all .15s;font-family:'Lato',sans-serif" onmouseover="this.style.borderColor='var(--sage)';this.style.color='var(--sage2)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--muted)'">🌐 EN</button></div></div>
-    <div class="modal-actions" style="justify-content:space-between">
+    <div class="modal-actions" style="justify-content:flex-end">
       <button class="btn" id="task-delete-action" style="display:none;border-color:rgba(138,90,90,.3);color:var(--rose);background:rgba(138,90,90,.06)" onclick="deleteTaskFromModal()">✕ Delete</button>
       <div style="display:flex;gap:8px">
         <button class="btn" onclick="closeTaskModal()">Cancel</button>
@@ -1358,7 +1396,7 @@ body{background:var(--bg);color:var(--text);font-family:'Lato',sans-serif;font-w
         <input class="form-input" type="date" id="pomo-exp-to">
       </div>
     </div>
-    <div class="modal-actions" style="justify-content:space-between">
+    <div class="modal-actions" style="justify-content:flex-end">
       <button class="btn" onclick="pomoConfirmClear()" style="font-size:11px;color:var(--rose);border-color:rgba(192,57,43,.4)" onmouseover="this.style.background='var(--rose)';this.style.color='#fff';this.style.borderColor='var(--rose)'" onmouseout="this.style.background='';this.style.color='var(--rose)';this.style.borderColor='rgba(192,57,43,.4)'">Clear log</button>
       <div style="display:flex;gap:8px">
         <button class="btn" onclick="closePomoExportModal()">Cancel</button>
@@ -4873,6 +4911,135 @@ function backlogSetSchedule(id, dateVal) {
   dailyRender();
 }
 
+// ── Routines ──────────────────────────────────────────────────
+const ROUTINE_KEY = 'jhtt_routines';
+let routines = JSON.parse(localStorage.getItem(ROUTINE_KEY) || '[]') || [];
+const ROUTINE_DAY_LABELS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+const ROUTINE_DAY_JS = [1,2,3,4,5,6,0]; // maps display index -> JS Date.getDay() value
+let _routineEditDays = [];
+
+function routinesSaveStore() { localStorage.setItem(ROUTINE_KEY, JSON.stringify(routines)); }
+
+function routineGenerate() {
+  if (!routines.length) return;
+  const today = dailyLocalDate();
+  const dow = new Date().getDay();
+  let changed = false;
+  routines.forEach(r => {
+    if (!Array.isArray(r.days) || !r.days.includes(dow)) return;
+    if (r.lastGenDate === today) return;
+    dailyItems.push({
+      id: Date.now() + Math.random(),
+      text: r.text,
+      date: today,
+      taskId: r.taskId || null,
+      taskName: r.taskName || null,
+      done: false,
+      ts: new Date().toISOString(),
+      routineId: r.id
+    });
+    r.lastGenDate = today;
+    changed = true;
+  });
+  if (changed) { dailySave(); routinesSaveStore(); }
+}
+
+function routineUpdateBadge() {
+  const badge = document.getElementById('routine-tab-badge');
+  if (badge) badge.textContent = routines.length;
+}
+
+function routinesRenderList() {
+  const el = document.getElementById('daily-panel-routines');
+  if (!el) return;
+  routineUpdateBadge();
+  const listHtml = !routines.length
+    ? `<div class="empty empty-sm"><div class="empty-text">No routines yet — add one below</div></div>`
+    : `<div style="display:flex;flex-direction:column;gap:8px">${routines.map((r, idx) => {
+        const dayStr = ROUTINE_DAY_JS.map((jsDay, i) => (r.days || []).includes(jsDay) ? ROUTINE_DAY_LABELS[i] : null).filter(Boolean).join(' ');
+        return `<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:var(--surface);cursor:pointer" onclick="routineOpenEdit(${idx})">
+          <div style="min-width:0">
+            <div style="font-size:13px;color:var(--text);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${r.text}</div>
+            <div style="font-size:11px;color:var(--muted2);font-family:'DM Mono',monospace;margin-top:2px">${dayStr || 'No days set'}${r.taskName ? ' · ' + r.taskName : ''}</div>
+          </div>
+          <span style="font-size:13px;color:var(--muted2);flex-shrink:0">›</span>
+        </div>`;
+      }).join('')}</div>`;
+  el.innerHTML = `<div style="font-size:12px;color:var(--muted2);margin-bottom:12px;flex-shrink:0">Recurring tasks that auto-add to today's list on the days you pick.</div>
+    <div style="flex:1;min-height:0;overflow-y:auto" class="scroll-hide">${listHtml}</div>
+    <button class="btn btn-primary" onclick="routineOpenEdit()" style="margin-top:12px;flex-shrink:0">+ New Routine</button>`;
+}
+
+function routineRenderDayChips() {
+  const el = document.getElementById('routine-day-chips');
+  if (!el) return;
+  el.innerHTML = ROUTINE_DAY_LABELS.map((lbl, i) => {
+    const d = ROUTINE_DAY_JS[i];
+    const active = _routineEditDays.includes(d);
+    return `<button type="button" onclick="routineToggleDay(${d})" style="flex:1;height:32px;border-radius:8px;border:1px solid ${active ? 'var(--sage)' : 'var(--border)'};background:${active ? 'var(--sage)' : 'var(--surface)'};color:${active ? '#fff' : 'var(--muted)'};font-size:11px;font-family:'Lato',sans-serif;cursor:pointer;transition:all .15s">${lbl}</button>`;
+  }).join('');
+}
+
+function routineToggleDay(d) {
+  const i = _routineEditDays.indexOf(d);
+  if (i === -1) _routineEditDays.push(d); else _routineEditDays.splice(i, 1);
+  routineRenderDayChips();
+}
+
+function routineOpenEdit(idx) {
+  const r = idx !== undefined ? routines[idx] : null;
+  document.getElementById('routine-edit-title').textContent = r ? 'Edit routine' : 'New routine';
+  document.getElementById('routine-edit-id').value = idx !== undefined ? idx : '';
+  document.getElementById('routine-text').value = r ? r.text : '';
+  document.getElementById('routine-delete-btn').style.display = r ? '' : 'none';
+  _routineEditDays = r ? (r.days || []).slice() : [];
+  routineRenderDayChips();
+  const sel = document.getElementById('routine-task-select');
+  const taskOptions = tasks.filter(t => t.status !== 'done').map(t => `<option value="${t.id}">${t.name.length > 35 ? t.name.slice(0,35)+'…' : t.name}</option>`).join('');
+  sel.innerHTML = `<option value="">No project</option>${taskOptions}`;
+  sel.value = r && r.taskId ? r.taskId : '';
+  document.getElementById('routine-edit-modal').classList.add('open');
+  setTimeout(() => document.getElementById('routine-text').focus(), 50);
+}
+
+function routineCloseEdit() { document.getElementById('routine-edit-modal').classList.remove('open'); }
+
+function routineSave() {
+  const text = document.getElementById('routine-text').value.trim();
+  if (!text) { showToast('Please enter a task'); return; }
+  if (!_routineEditDays.length) { showToast('Pick at least one day'); return; }
+  const sel = document.getElementById('routine-task-select');
+  const taskId = sel.value ? parseInt(sel.value) : null;
+  const task = taskId ? tasks.find(t => t.id === taskId) : null;
+  const idxVal = document.getElementById('routine-edit-id').value;
+  if (idxVal !== '') {
+    const r = routines[parseInt(idxVal)];
+    r.text = text;
+    r.days = _routineEditDays.slice();
+    r.taskId = task ? task.id : null;
+    r.taskName = task ? task.name : null;
+  } else {
+    routines.push({ id: Date.now(), text, days: _routineEditDays.slice(), taskId: task ? task.id : null, taskName: task ? task.name : null, lastGenDate: null });
+  }
+  routinesSaveStore();
+  routinesRenderList();
+  routineCloseEdit();
+  showToast(idxVal !== '' ? 'Routine updated' : 'Routine saved ✦');
+}
+
+async function routineDelete() {
+  const idxVal = document.getElementById('routine-edit-id').value;
+  if (idxVal === '') return;
+  const ok = await customConfirm('This routine will be permanently removed.', 'Delete routine?');
+  if (!ok) return;
+  routines.splice(parseInt(idxVal), 1);
+  routinesSaveStore();
+  routinesRenderList();
+  routineCloseEdit();
+  showToast('Routine removed');
+}
+// ── end Routines ──────────────────────────────────────────────
+
 function dailyToggle(id) {
   const item = dailyItems.find(i => i.id === id);
   if (!item) return;
@@ -5704,14 +5871,19 @@ function dailySideTab(tab) {
   _dailySideTab = tab;
   const panelBacklog = document.getElementById('daily-panel-backlog');
   const panelBlockers = document.getElementById('daily-panel-blockers');
+  const panelRoutines = document.getElementById('daily-panel-routines');
   const tabBacklog = document.getElementById('dstab-backlog');
   const tabBlockers = document.getElementById('dstab-blockers');
+  const tabRoutines = document.getElementById('dstab-routines');
   const addBacklogBtn = document.querySelector('button[onclick="dailyOpenBacklogAdd()"]');
   if (panelBacklog) panelBacklog.style.display = tab === 'backlog' ? 'flex' : 'none';
   if (panelBlockers) panelBlockers.style.display = tab === 'blockers' ? 'flex' : 'none';
+  if (panelRoutines) panelRoutines.style.display = tab === 'routines' ? 'flex' : 'none';
   if (tabBacklog) tabBacklog.className = 'daily-side-tab' + (tab === 'backlog' ? ' active-backlog' : '');
   if (tabBlockers) tabBlockers.className = 'daily-side-tab' + (tab === 'blockers' ? ' active-blocker' : '');
+  if (tabRoutines) tabRoutines.className = 'daily-side-tab' + (tab === 'routines' ? ' active-routine' : '');
   if (addBacklogBtn) addBacklogBtn.style.display = tab === 'backlog' ? '' : 'none';
+  if (tab === 'routines') routinesRenderList();
 }
 // ── end Blockers ─────────────────────────────────────────────────
 
@@ -6128,6 +6300,8 @@ function cycleTheme() {
 (function() {
   const saved = localStorage.getItem('jtt_theme') || 'green';
   backlogAutoSchedule();
+  routineGenerate();
+  routineUpdateBadge();
   applyTheme(saved);
 })();
 </script>

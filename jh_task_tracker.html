@@ -1928,7 +1928,7 @@ function closeProjDetail() {
 
 function pdpSetTab(tab) {
   _pdpTab = tab;
-  ['overview','backlog','blockers'].forEach(t => {
+  ['overview','backlog','blockers','routines'].forEach(t => {
     document.getElementById('pdp-tab-' + t).classList.toggle('active', t === tab);
   });
   pdpRenderBody();
@@ -1947,10 +1947,13 @@ function pdpUpdateCounts(task) {
   if (!t) return;
   const bl = backlogItems.filter(i => i.taskId === t.id).length;
   const bk = blockers.filter(b => b.taskId === t.id && !b.resolved).length;
+  const rt = routines.filter(r => r.taskId === t.id).length;
   const blEl = document.getElementById('pdp-backlog-count');
   const bkEl = document.getElementById('pdp-blocker-count');
+  const rtEl = document.getElementById('pdp-routine-count');
   if (blEl) blEl.textContent = bl > 0 ? bl : '';
   if (bkEl) bkEl.textContent = bk > 0 ? bk : '';
+  if (rtEl) rtEl.textContent = rt > 0 ? rt : '';
 }
 
 function pdpRenderBody() {
@@ -1961,6 +1964,7 @@ function pdpRenderBody() {
   if (_pdpTab === 'overview') { pdpRenderOverview(body, footer); }
   else if (_pdpTab === 'backlog') { pdpRenderBacklog(body, footer); }
   else if (_pdpTab === 'blockers') { pdpRenderBlockers(body, footer); }
+  else if (_pdpTab === 'routines') { pdpRenderRoutines(body, footer); }
 }
 
 // ── Overview tab ─────────────────────────────────────────────────────────
@@ -2300,7 +2304,31 @@ function pdpRenderBlockers(body, footer) {
   if (inp) inp.focus();
 }
 
+// ── Routines tab (project detail panel) ────────────────────────────────────
+function pdpRenderRoutines(body, footer) {
+  const task = tasks.find(t => t.id === _pdpTaskId);
+  if (!task) return;
+  const items = routines.filter(r => r.taskId === _pdpTaskId);
+  const listHtml = items.length === 0
+    ? `<div class="pdp-empty">No routines linked to this project</div>`
+    : items.map(r => {
+        const globalIdx = routines.indexOf(r);
+        const dayStr = ROUTINE_DAY_JS.map((jsDay, i) => (r.days || []).includes(jsDay) ? ROUTINE_DAY_LABELS[i] : null).filter(Boolean).join(' ');
+        return `<div class="pdp-item" style="cursor:pointer;flex-direction:column;align-items:stretch;gap:3px" onclick="routineOpenEdit(${globalIdx})">
+          <div style="display:flex;align-items:center;gap:5px">
+            <span class="pdp-item-text" style="font-weight:500">${escHtml(r.text)}</span>
+            ${r.link ? `<a href="${r.link}" target="_blank" rel="noopener" onclick="event.stopPropagation()" title="${r.link}" style="flex-shrink:0;opacity:.7;text-decoration:none">🔗</a>` : ''}
+          </div>
+          <div style="font-size:11px;color:var(--muted2);font-family:'DM Mono',monospace">${dayStr || 'No days set'}</div>
+        </div>`;
+      }).join('');
+  body.innerHTML = `<div class="pdp-section-title">Routines</div>${listHtml}`;
+  footer.innerHTML = `<button class="btn btn-primary" onclick="routineOpenEdit(undefined, ${_pdpTaskId})" style="width:100%">+ New Routine</button>`;
+}
+
 let _pdpBlockerOwner = null;
+
+
 
 function pdpBlockerEditOwner(id) {
   const b = blockers.find(x => x.id === id);
@@ -4994,7 +5022,7 @@ function routineToggleDay(d) {
   routineRenderDayChips();
 }
 
-function routineOpenEdit(idx) {
+function routineOpenEdit(idx, presetTaskId) {
   const r = idx !== undefined ? routines[idx] : null;
   document.getElementById('routine-edit-title').textContent = r ? 'Edit routine' : 'New routine';
   document.getElementById('routine-edit-id').value = idx !== undefined ? idx : '';
@@ -5005,7 +5033,9 @@ function routineOpenEdit(idx) {
   const sel = document.getElementById('routine-task-select');
   const taskOptions = tasks.filter(t => t.status !== 'done').map(t => `<option value="${t.id}">${t.name.length > 35 ? t.name.slice(0,35)+'…' : t.name}</option>`).join('');
   sel.innerHTML = `<option value="">No project</option>${taskOptions}`;
-  sel.value = r && r.taskId ? r.taskId : '';
+  sel.value = r && r.taskId ? r.taskId : (presetTaskId !== undefined ? presetTaskId : '');
+  const projGroup = sel.closest('.form-group');
+  if (projGroup) projGroup.style.display = (presetTaskId !== undefined && !r) ? 'none' : '';
   document.getElementById('routine-link').value = r && r.link ? r.link : '';
   document.getElementById('routine-edit-modal').classList.add('open');
   setTimeout(() => document.getElementById('routine-text').focus(), 50);
@@ -5034,6 +5064,7 @@ function routineSave() {
   }
   routinesSaveStore();
   routinesRenderList();
+  routinePdpRefresh();
   routineCloseEdit();
   showToast(idxVal !== '' ? 'Routine updated' : 'Routine saved ✦');
 }
@@ -5046,8 +5077,15 @@ async function routineDelete() {
   routines.splice(parseInt(idxVal), 1);
   routinesSaveStore();
   routinesRenderList();
+  routinePdpRefresh();
   routineCloseEdit();
   showToast('Routine removed');
+}
+
+function routinePdpRefresh() {
+  if (_pdpTaskId === null || typeof _pdpTaskId === 'undefined') return;
+  pdpUpdateCounts();
+  if (_pdpTab === 'routines') pdpRenderBody();
 }
 // ── end Routines ──────────────────────────────────────────────
 
@@ -6346,6 +6384,7 @@ function cycleTheme() {
         <button class="pdp-tab active" id="pdp-tab-overview" onclick="pdpSetTab('overview')">Overview</button>
         <button class="pdp-tab" id="pdp-tab-backlog" onclick="pdpSetTab('backlog')">Backlog <span id="pdp-backlog-count" style="font-size:10px;font-family:'DM Mono',monospace;opacity:.6"></span></button>
         <button class="pdp-tab" id="pdp-tab-blockers" onclick="pdpSetTab('blockers')">Blockers <span id="pdp-blocker-count" style="font-size:10px;font-family:'DM Mono',monospace;opacity:.6"></span></button>
+        <button class="pdp-tab" id="pdp-tab-routines" onclick="pdpSetTab('routines')">🔁 Routines <span id="pdp-routine-count" style="font-size:10px;font-family:'DM Mono',monospace;opacity:.6"></span></button>
       </div>
     </div>
     <div class="pdp-body" id="pdp-body"></div>

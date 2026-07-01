@@ -301,7 +301,7 @@ body{background:var(--bg);color:var(--text);font-family:'Lato',sans-serif;font-w
 .daily-side-tab.active-backlog{color:var(--muted);border-bottom-color:var(--border2);background:var(--surface2)}
 .daily-side-tab.active-routine{color:var(--sage2);border-bottom-color:var(--sage);background:rgba(122,158,122,.08)}
 .daily-side-tab:hover:not(.active-blocker):not(.active-backlog):not(.active-routine){color:var(--text2);background:var(--surface2)}
-.tab-badge-routine{background:rgba(122,158,122,.15);color:var(--sage2)}
+.tab-badge-routine{background:rgba(74,122,138,.15);color:var(--sky)}
 .daily-side-tab-badge{display:inline-block;margin-left:5px;font-size:9px;padding:1px 6px;border-radius:999px;font-weight:700;vertical-align:middle}
 .tab-badge-blocker{background:rgba(196,90,48,.15);color:var(--blocker-dark)}
 .tab-badge-backlog{background:var(--surface3);color:var(--muted)}
@@ -730,9 +730,9 @@ body{background:var(--bg);color:var(--text);font-family:'Lato',sans-serif;font-w
         <div class="daily-main" id="daily-main" ondragover="event.preventDefault();if(typeof _blockerDragId!=='undefined'&&_blockerDragId)event.dataTransfer.dropEffect='none'" ondrop="if(typeof _blockerDragId==='undefined'||!_blockerDragId)dailyDropToToday(event);else event.preventDefault()"></div>
         <div class="daily-side" id="daily-side" style="padding:0;overflow:hidden">
           <div class="daily-side-tabs">
-            <button class="daily-side-tab active-backlog" id="dstab-backlog" onclick="dailySideTab('backlog')">Backlog<span class="daily-side-tab-badge tab-badge-backlog" id="backlog-tab-badge">0</span></button>
-            <button class="daily-side-tab" id="dstab-blockers" onclick="dailySideTab('blockers')">⛔ Blockers<span class="daily-side-tab-badge tab-badge-blocker" id="blocker-tab-badge">0</span></button>
-            <button class="daily-side-tab" id="dstab-routines" onclick="dailySideTab('routines')">🔁 Routines<span class="daily-side-tab-badge tab-badge-routine" id="routine-tab-badge">0</span></button>
+            <button class="daily-side-tab active-backlog" id="dstab-backlog" onclick="dailySideTab('backlog')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><path d="M9 6h11"/><path d="M9 12h11"/><path d="M9 18h11"/><path d="M5 6h.01"/><path d="M5 12h.01"/><path d="M5 18h.01"/></svg>Backlog<span class="daily-side-tab-badge tab-badge-backlog" id="backlog-tab-badge">0</span></button>
+            <button class="daily-side-tab" id="dstab-blockers" onclick="dailySideTab('blockers')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><circle cx="12" cy="12" r="9"/><path d="M5.7 5.7l12.6 12.6"/></svg>Blockers<span class="daily-side-tab-badge tab-badge-blocker" id="blocker-tab-badge">0</span></button>
+            <button class="daily-side-tab" id="dstab-routines" onclick="dailySideTab('routines')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><path d="M4 12v-3a3 3 0 0 1 3 -3h13m-3 -3l3 3l-3 3"/><path d="M20 12v3a3 3 0 0 1 -3 3h-13m3 3l-3 -3l3 -3"/></svg>Routines<span class="daily-side-tab-badge tab-badge-routine" id="routine-tab-badge">0</span></button>
           </div>
           <div class="daily-tab-panel" id="daily-panel-backlog" style="padding:0" ondragover="event.preventDefault()" ondrop="dailyDropToBacklog(event)"></div>
           <div class="daily-tab-panel hidden" id="daily-panel-blockers" style="padding:14px 16px;flex-direction:column;flex:1;min-height:0;overflow:hidden" ondragover="event.preventDefault();event.dataTransfer.dropEffect='none'" ondrop="event.preventDefault()"></div>
@@ -1126,9 +1126,9 @@ body{background:var(--bg);color:var(--text);font-family:'Lato',sans-serif;font-w
           <label class="form-label">Link <span style="color:var(--muted2);font-weight:400">(optional)</span></label>
           <input class="form-input" id="routine-link" placeholder="https://…" style="width:100%;box-sizing:border-box">
         </div>
-        <div class="modal-actions" style="justify-content:flex-end">
+        <div class="modal-actions" style="justify-content:flex-start">
           <button class="btn" id="routine-delete-btn" onclick="routineDelete()" style="color:var(--rose);border-color:rgba(192,57,43,.4);display:none" onmouseover="this.style.background='var(--rose)';this.style.color='#fff';this.style.borderColor='var(--rose)'" onmouseout="this.style.background='';this.style.color='var(--rose)';this.style.borderColor='rgba(192,57,43,.4)'">Delete</button>
-          <div style="display:flex;gap:8px">
+          <div style="display:flex;gap:8px;margin-left:auto">
             <button class="btn" onclick="routineCloseEdit()">Cancel</button>
             <button class="btn btn-primary" onclick="routineSave()">Save</button>
           </div>
@@ -1981,24 +1981,24 @@ function pdpRenderOverview(body, footer) {
     <div class="pdp-field">
       <span class="pdp-label">Task name</span>
       <div style="position:relative">
-        <input class="form-input" id="pdp-f-name" value="${escHtml(task.name)}" style="font-size:14px;padding-right:70px">
+        <input class="form-input" id="pdp-f-name" value="${escHtml(task.name)}" style="font-size:14px;padding-right:70px" onblur="pdpAutosaveOverview()">
         ${_tBtn('pdp-f-name')}
       </div>
     </div>
     <div class="pdp-field-row">
       <div class="pdp-field">
         <span class="pdp-label">Due date</span>
-        <input class="form-input" type="date" id="pdp-f-due" value="${task.due || ''}">
+        <input class="form-input" type="date" id="pdp-f-due" value="${task.due || ''}" onchange="pdpAutosaveOverview()">
       </div>
       <div class="pdp-field">
         <span class="pdp-label">Date assigned</span>
-        <input class="form-input" type="date" id="pdp-f-date" value="${task.date || ''}">
+        <input class="form-input" type="date" id="pdp-f-date" value="${task.date || ''}" onchange="pdpAutosaveOverview()">
       </div>
     </div>
     <div class="pdp-field-row">
       <div class="pdp-field">
         <span class="pdp-label">Priority</span>
-        <select class="form-select" id="pdp-f-priority">
+        <select class="form-select" id="pdp-f-priority" onchange="pdpAutosaveOverview()">
           <option value="high"${task.priority==='high'?' selected':''}>High</option>
           <option value="med"${task.priority==='med'?' selected':''}>Medium</option>
           <option value="low"${task.priority==='low'?' selected':''}>Low</option>
@@ -2006,7 +2006,7 @@ function pdpRenderOverview(body, footer) {
       </div>
       <div class="pdp-field">
         <span class="pdp-label">Status</span>
-        <select class="form-select" id="pdp-f-status">
+        <select class="form-select" id="pdp-f-status" onchange="pdpAutosaveOverview()">
           <option value="pending"${task.status==='pending'?' selected':''}>Todo</option>
           <option value="in-progress"${task.status==='in-progress'?' selected':''}>In Progress</option>
           <option value="in-review"${task.status==='in-review'?' selected':''}>In Review</option>
@@ -2017,7 +2017,7 @@ function pdpRenderOverview(body, footer) {
     <div class="pdp-field">
       <span class="pdp-label">Notes</span>
       <div style="position:relative">
-        <textarea class="form-textarea" id="pdp-f-notes" style="min-height:80px;padding-right:70px;padding-bottom:32px">${escHtml(task.notes || '')}</textarea>
+        <textarea class="form-textarea" id="pdp-f-notes" style="min-height:80px;padding-right:70px;padding-bottom:32px" onblur="pdpAutosaveOverview()">${escHtml(task.notes || '')}</textarea>
         ${_tBtn('pdp-f-notes', 'right:8px;bottom:8px')}
       </div>
     </div>
@@ -2037,13 +2037,7 @@ function pdpRenderOverview(body, footer) {
       <button class="pdp-add-btn" onclick="pdpTodayAdd(${task.id})" style="align-self:stretch;padding:0 12px;font-size:16px">+</button>
     </div>
     <div style="height:1px;background:var(--border);margin:8px -22px 8px"></div>
-    <div style="display:flex;gap:8px;justify-content:space-between;width:100%">
-      <button class="btn" style="border-color:rgba(138,90,90,.3);color:var(--rose);background:rgba(138,90,90,.06)" onclick="pdpDeleteProject()">✕ Delete</button>
-      <div style="display:flex;gap:8px">
-        <button class="btn" onclick="closeProjDetail()">Cancel</button>
-        <button class="btn btn-primary" onclick="pdpSaveOverview()">Save</button>
-      </div>
-    </div>
+    <button class="btn" style="width:100%;justify-content:center;border-color:transparent;background:none;color:var(--muted2);opacity:.7" onmouseover="this.style.opacity='1';this.style.color='var(--rose)'" onmouseout="this.style.opacity='.7';this.style.color='var(--muted2)'" onclick="pdpDeleteProject()">✕ Delete project</button>
   `;
   pdpRenderTodayList();
 }
@@ -2123,25 +2117,24 @@ function pdpTodayAdd(taskId) {
   pdpRenderTodayList();
 }
 
-function pdpSaveOverview() {
+function pdpAutosaveOverview() {
   const task = tasks.find(t => t.id === _pdpTaskId);
   if (!task) return;
-  const newStatus = document.getElementById('pdp-f-status').value;
-  const oldStatus = task.status;
-  task.name = document.getElementById('pdp-f-name').value.trim();
+  const nameInput = document.getElementById('pdp-f-name');
+  const newName = nameInput.value.trim();
+  if (newName) { task.name = newName; } else { nameInput.value = task.name; }
   task.due = document.getElementById('pdp-f-due').value;
   task.date = document.getElementById('pdp-f-date').value;
   task.priority = document.getElementById('pdp-f-priority').value;
-  task.status = newStatus;
-  task.notes = document.getElementById('pdp-f-notes').value.trim();
-  if (!task.name) return;
-  if (oldStatus !== newStatus) {
+  const newStatus = document.getElementById('pdp-f-status').value;
+  if (task.status !== newStatus) {
     task.statusHistory = task.statusHistory || [];
     task.statusHistory.push({ status: newStatus, changedAt: new Date().toISOString() });
+    task.status = newStatus;
   }
+  task.notes = document.getElementById('pdp-f-notes').value.trim();
   save(); render();
   document.getElementById('pdp-title').textContent = task.name;
-  showToast('Project updated');
   pomoPopulateTaskSelect();
 }
 
@@ -4990,14 +4983,19 @@ function routinesRenderList() {
     ? `<div class="empty empty-sm"><div class="empty-text">No routines yet — add one below</div></div>`
     : `<div style="display:flex;flex-direction:column;gap:8px">${routines.map((r, idx) => {
         const dayStr = ROUTINE_DAY_JS.map((jsDay, i) => (r.days || []).includes(jsDay) ? ROUTINE_DAY_LABELS[i] : null).filter(Boolean).join(' ');
+        const tagStyle = r.taskName && r.taskId ? dtagStyle(r.taskId) : '';
+        const tagHtml = r.taskName
+          ? `<span class="daily-item-tag" style="${tagStyle}flex-shrink:0" title="${r.taskName}">${r.taskName.length > 22 ? r.taskName.slice(0,22)+'…' : r.taskName}</span>`
+          : '';
         return `<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:var(--surface);cursor:pointer" onclick="routineOpenEdit(${idx})">
-          <div style="min-width:0">
+          <div style="min-width:0;flex:1">
             <div style="font-size:13px;color:var(--text);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:5px">
               <span style="overflow:hidden;text-overflow:ellipsis">${r.text}</span>
               ${r.link ? `<a href="${r.link}" target="_blank" rel="noopener" onclick="event.stopPropagation()" title="${r.link}" style="flex-shrink:0;opacity:.7;text-decoration:none">🔗</a>` : ''}
             </div>
-            <div style="font-size:11px;color:var(--muted2);font-family:'DM Mono',monospace;margin-top:2px">${dayStr || 'No days set'}${r.taskName ? ' · ' + r.taskName : ''}</div>
+            <div style="font-size:11px;color:var(--muted2);font-family:'DM Mono',monospace;margin-top:2px">${dayStr || 'No days set'}</div>
           </div>
+          ${tagHtml}
           <span style="font-size:13px;color:var(--muted2);flex-shrink:0">›</span>
         </div>`;
       }).join('')}</div>`;

@@ -247,6 +247,8 @@ body{background:var(--bg);color:var(--text);font-family:'Lato',sans-serif;font-w
 .daily-stat-num{font-size:20px;font-weight:700;color:var(--text);font-family:'DM Mono',monospace}
 .daily-stat-lbl{font-size:11px;color:var(--muted);margin-top:1px}
 .backlog-item{display:flex;flex-direction:column;gap:6px;padding:8px 10px;border-radius:0 9px 9px 0;border-left:3px solid var(--sage2);background:rgba(61,107,80,.04);border-top:1px solid rgba(61,107,80,.12);border-right:1px solid rgba(61,107,80,.12);border-bottom:1px solid rgba(61,107,80,.12);font-size:12px;color:var(--text2)}
+.fb-item{transition:opacity .15s,border-color .15s,background .15s}
+.fb-item.drag-over{border-color:var(--sage);background:var(--surface2)}
 .backlog-item-row1{display:flex;align-items:center;gap:6px}
 .backlog-item-row2{display:flex;align-items:center;gap:6px}
 .backlog-item-text{flex:1;font-size:12px;color:var(--text);font-weight:500;line-height:1.35;word-break:break-word;white-space:normal}
@@ -1010,7 +1012,7 @@ body{background:var(--bg);color:var(--text);font-family:'Lato',sans-serif;font-w
             <div style="font-size:13px;color:var(--muted)">Log bugs, ideas and improvements without losing focus</div>
           </div>
           <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden">
-            <div style="padding:14px 16px;border-bottom:1px solid var(--border)">
+            <div style="padding:14px 16px">
               <div style="display:flex;gap:8px;margin-bottom:10px">
                 <button id="fb-type-bug" onclick="fbSetType('bug')" style="font-size:11px;padding:4px 12px;border-radius:999px;border:1.5px solid #A32D2D;background:#fcebeb;color:#A32D2D;cursor:pointer;font-family:'Lato',sans-serif;font-weight:700">🐛 Bug</button>
                 <button id="fb-type-idea" onclick="fbSetType('idea')" style="font-size:11px;padding:4px 12px;border-radius:999px;border:1.5px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;font-family:'Lato',sans-serif">💡 Idea</button>
@@ -1027,9 +1029,9 @@ body{background:var(--bg);color:var(--text);font-family:'Lato',sans-serif;font-w
                 <button onclick="fbAdd()" class="btn btn-primary" style="font-size:13px;padding:8px 18px;white-space:nowrap">Add</button>
               </div>
             </div>
-            <div id="fb-list" style="max-height:calc(100vh - 200px);overflow-y:auto"></div>
-            <div id="fb-empty" style="padding:32px;text-align:center;font-size:13px;color:var(--muted)">No entries yet — log your first bug, idea or improvement above</div>
           </div>
+          <div id="fb-list" style="display:flex;flex-direction:column;gap:10px;margin-top:12px;max-height:calc(100vh - 260px);overflow-y:auto;padding-right:2px"></div>
+          <div id="fb-empty" style="padding:32px;text-align:center;font-size:13px;color:var(--muted)">No entries yet — log your first bug, idea or improvement above</div>
         </div>
 
         <!-- Right: Changelog -->
@@ -4781,6 +4783,7 @@ const FB_KEY = 'jhtt_feedback';
 let fbItems = JSON.parse(localStorage.getItem(FB_KEY) || '[]');
 let fbType = 'bug';
 let fbEditId = null;
+let _fbDragId = null;
 
 function fbSaveStore() { localStorage.setItem(FB_KEY, JSON.stringify(fbItems)); }
 
@@ -4813,7 +4816,7 @@ function fbAdd() {
     const addBtn = document.querySelector('#view-feedback [onclick="fbAdd()"]');
     if (addBtn) addBtn.textContent = 'Add';
   } else {
-    fbItems.unshift({ id: Date.now(), type: fbType, text, ts: new Date().toISOString() });
+    fbItems.unshift({ id: Date.now(), type: fbType, text, ts: new Date().toISOString(), starred: false });
   }
   fbSaveStore(); fbRender(); inp.value = '';
   showToast('Logged ✓');
@@ -4846,6 +4849,13 @@ async function fbDelete(id) {
   showToast('Removed');
 }
 
+function fbToggleStar(id) {
+  const item = fbItems.find(i => i.id === id);
+  if (!item) return;
+  item.starred = !item.starred;
+  fbSaveStore(); fbRender();
+}
+
 function fbRender() {
   const el = document.getElementById('fb-list');
   const empty = document.getElementById('fb-empty');
@@ -4864,18 +4874,64 @@ function fbRender() {
     const tagLabel = isBug ? '🐛 Bug' : isImprove ? '✨ Improve' : '💡 Idea';
     const date = new Date(item.ts).toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'});
     const isEditing = fbEditId === item.id;
-    return `<div style="padding:12px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;background:${isEditing ? 'var(--surface2)' : 'transparent'};transition:background .15s">
+    return `<div class="fb-item" id="fbitem-${item.id}" draggable="true"
+        ondragstart="fbDragStart(event,${item.id})"
+        ondragover="fbDragOver(event,${item.id})"
+        ondragleave="fbDragLeave(event)"
+        ondrop="fbDrop(event,${item.id})"
+        ondragend="fbDragEnd(event)"
+        style="background:${isEditing ? 'var(--surface2)' : 'var(--surface)'};border-top:1px solid var(--border);border-right:1px solid var(--border);border-bottom:1px solid var(--border);border-left:${item.starred ? '3px solid var(--amber)' : '1px solid var(--border)'};border-radius:12px;padding:12px 16px 12px ${item.starred ? '8px' : '10px'};display:flex;align-items:center;gap:10px;cursor:grab">
+      <span style="color:var(--muted2);font-size:13px;line-height:1;flex-shrink:0;letter-spacing:-1px" title="Drag to reorder">⠿</span>
       <div style="flex:1;min-width:0">
         <div style="font-size:13px;color:var(--text);line-height:1.5">${item.text}</div>
         <div style="font-size:11px;color:var(--muted2);margin-top:3px">${date}</div>
       </div>
       <span style="font-size:10px;padding:2px 9px;border-radius:6px;background:${tagBg};color:${tagColor};white-space:nowrap;flex-shrink:0;font-weight:700;min-width:58px;text-align:center">${tagLabel}</span>
       <div style="display:flex;gap:10px;flex-shrink:0;align-items:center">
-        <button onclick="fbEdit(${item.id})" style="background:none;border:none;cursor:pointer;font-size:14px;color:var(--muted);padding:0" title="Edit">✎</button>
-        <button onclick="fbDelete(${item.id})" style="background:none;border:none;cursor:pointer;font-size:14px;color:var(--muted);padding:0" title="Delete">✕</button>
+        <button onclick="event.stopPropagation();fbToggleStar(${item.id})" style="background:none;border:none;cursor:pointer;font-size:16px;padding:0;line-height:1;color:${item.starred ? 'var(--amber)' : '#B4B2A9'}" title="${item.starred ? 'Unstar' : 'Star'}">${item.starred ? '★' : '☆'}</button>
+        <button onclick="event.stopPropagation();fbEdit(${item.id})" style="background:none;border:none;cursor:pointer;font-size:14px;color:var(--muted);padding:0" title="Edit">✎</button>
+        <button onclick="event.stopPropagation();fbDelete(${item.id})" style="background:none;border:none;cursor:pointer;font-size:14px;color:var(--muted);padding:0" title="Delete">✕</button>
       </div>
     </div>`;
   }).join('');
+}
+
+function fbDragStart(e, id) {
+  _fbDragId = id;
+  e.dataTransfer.effectAllowed = 'move';
+  setTimeout(() => { const el = document.getElementById('fbitem-' + id); if (el) { el.style.opacity = '0.4'; el.style.cursor = 'grabbing'; } }, 0);
+}
+
+function fbDragOver(e, id) {
+  e.preventDefault();
+  if (_fbDragId === id) return;
+  document.querySelectorAll('.fb-item').forEach(el => el.classList.remove('drag-over'));
+  const el = document.getElementById('fbitem-' + id);
+  if (el) el.classList.add('drag-over');
+}
+
+function fbDragLeave(e) {
+  e.currentTarget.classList.remove('drag-over');
+}
+
+function fbDrop(e, targetId) {
+  e.preventDefault();
+  if (_fbDragId === null || _fbDragId === targetId) return;
+  const fromIdx = fbItems.findIndex(i => i.id === _fbDragId);
+  const toIdx = fbItems.findIndex(i => i.id === targetId);
+  if (fromIdx === -1 || toIdx === -1) return;
+  const [moved] = fbItems.splice(fromIdx, 1);
+  fbItems.splice(toIdx, 0, moved);
+  fbSaveStore(); fbRender();
+}
+
+function fbDragEnd(e) {
+  _fbDragId = null;
+  document.querySelectorAll('.fb-item').forEach(el => {
+    el.classList.remove('drag-over');
+    el.style.opacity = '1';
+    el.style.cursor = 'grab';
+  });
 }
 // ── end Feedback ──────────────────────────────────────────────
 
